@@ -1,6 +1,9 @@
 import asyncore
 import socket
 
+from .resp_decoder import RESPDecoder
+
+
 
 class MainServerSocket(asyncore.dispatcher):
     def __init__(self, port):
@@ -18,14 +21,24 @@ class MainServerSocket(asyncore.dispatcher):
 
 class SecondaryServerSocket(asyncore.dispatcher_with_send):
     def handle_read(self):
-        receivedData = self.recv(32)
-        response = "+PONG\r\n"
-        if receivedData: 
-            print('received "{}"'.format(receivedData.decode('utf-8')))
-            self.send(response.encode())
-        else: self.close()
+        try:
+            command, *args = RESPDecoder(self).decode()
+            if command == b"ping":
+                self.send(b"+PONG\r\n")
+            elif command == b"echo":
+                self.send(b"$%d\r\n%b\r\n" % (len(args[0]), args[0]))
+            else:
+                self.send(b"-ERR unkown command\r\n")
+        except Exception as e:
+            print(f'Err: {str(e)}')
     def handle_close(self):
         print("Disconnected from ")
+        self.close()
 
-MainServerSocket(6379)
-asyncore.loop( )
+try:
+    MainServerSocket(6379)
+    asyncore.loop( )
+except KeyboardInterrupt:
+    print('ctrl+c')
+finally:
+    print('closing')
