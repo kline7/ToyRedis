@@ -1,6 +1,10 @@
 # ToyRedis
 Build your own Redis Implementation.
 
+# To execute the server
+```python3 -m main```
+
+
 Currently supported:
 * Multi-connection server utilizing event loop async code execution instead of multi threading
 * Redis protocol for all the TCP messages.
